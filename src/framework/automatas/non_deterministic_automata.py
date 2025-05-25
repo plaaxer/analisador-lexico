@@ -93,3 +93,46 @@ class NonDeterministicFiniteAutomata(Automata):
                 return True
         
         return False # No active state is an accept state
+
+    def __str__(self):
+        def fmt_state(state):
+            if isinstance(state, frozenset):
+                return "{" + ", ".join(sorted(state)) + "}"
+            return str(state)
+
+        def fmt_transitions():
+            lines = []
+            for (state, symbol), targets in sorted(self.transitions.items(), key=lambda item: (fmt_state(item[0][0]), item[0][1])):
+                targets_str = ", ".join(sorted(targets))
+                lines.append(f"    δ({fmt_state(state)}, '{symbol}') → {{{targets_str}}}")
+            return "\n".join(lines)
+
+        lines = [
+            "NonDeterministicFiniteAutomata:",
+            "  States:",
+        ]
+        for state in sorted(self.states, key=lambda s: sorted(s) if isinstance(s, frozenset) else s):
+            lines.append(f"    {fmt_state(state)}")
+
+        lines.append("  Alphabet:")
+        for symbol in sorted(self.alphabet):
+            lines.append(f"    '{symbol}'")
+
+        lines.append("  Transitions:")
+        lines.append(fmt_transitions())
+
+        lines.append(f"  Start State:\n    {fmt_state(self.start_state)}")
+
+        lines.append("  Accept States:")
+        for state in sorted(self.accept_states, key=lambda s: sorted(s) if isinstance(s, frozenset) else s):
+            lines.append(f"    {fmt_state(state)}")
+
+        return "\n".join(lines)
+
+    def _format_transitions(self):
+        lines = ["{"]
+        for (state, symbol), targets in sorted(self.transitions.items()):
+            targets_str = ', '.join(sorted(targets))
+            lines.append(f"    ({state!r}, {symbol!r}): {{{targets_str}}},")
+        lines.append("  }")
+        return '\n'.join(lines)

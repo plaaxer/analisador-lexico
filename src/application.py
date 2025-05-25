@@ -6,7 +6,8 @@ class Application:
         self.run()
 
     def run(self):
-        self.framework.process_regular_expression("ab?c(a|b)+")
+        # self.framework.process_regular_expression("+ab?c(a|b)+")
+        self.framework.generate_lexical_analyzer("ers.txt")
     
     # eventualmente pode ser um logger mais complexo
     def log(self, message: str):

@@ -16,16 +16,15 @@ class GalFramework:
         self.application = application
         self.loaded_lexical_analyzers = []
 
-    def generate_lexical_analyzer(self, regexs):
-
+    def generate_lexical_analyzer(self, ers_filename="ers.txt"):
         lexical_analyzer = LexicalAnalyzer(config.LEXICAL_ANALYZER_DEFAULT_NAME, self.application)
-        parsed_regexs = utils.parse_entries(regexs)
+        parsed_regexs = utils.parse_entries(ers_filename)
 
         for key, value in parsed_regexs.items():
             if not value:
                 self.application.error(f"Erro ao processar a expressão regular: {key}")
                 continue
-            dfa = self.process_regular_expression(value)
+            dfa = self.process_regular_expression(value, key)
 
             if not dfa:
                 continue
@@ -35,14 +34,14 @@ class GalFramework:
 
         lexical_analyzer.generate()
 
-        if lexical_analyzer.has_errors():
+        if lexical_analyzer.has_errors:
             self.application.error("Erro ao gerar o analisador léxico.")
             return
 
         self.loaded_lexical_analyzers.append(lexical_analyzer)
-        self.application.log("Analisador léxico gerado com sucesso.")    
+        self.application.log("Analisador léxico gerado com sucesso.")
 
-    def process_regular_expression(self, regex, name="dfa"):
+    def process_regular_expression(self, regex, er_name="dfa"):
             try:
                 dfa = RegexProcessor.regex_to_dfa(regex)
             except ValueError as e:
@@ -53,7 +52,7 @@ class GalFramework:
 
             output_dir = "generated_afds"
             os.makedirs(output_dir, exist_ok=True)
-            file_name = f"{name}.txt"
+            file_name = f"{er_name}.txt"
             file_path = os.path.join(output_dir, file_name)
             try:
                 with open(file_path, 'w') as f:

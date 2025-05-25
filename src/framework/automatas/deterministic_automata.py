@@ -22,15 +22,21 @@ class DeterministicFiniteAutomata(Automata):
         return self.is_accepting(self.current_state)
 
     def __str__(self):
-        return (
-            f"DeterministicFiniteAutomata(\n"
-            f"  States: {self.states}\n"
-            f"  Alphabet: {self.alphabet}\n"
-            f"  Transitions: {self._format_transitions()}\n"
-            f"  Start State: {self.start_state}\n"
-            f"  Accept States: {self.accept_states}\n"
-            f")"
-        )
+        def fmt_state(s):
+            if isinstance(s, frozenset):
+                return "{" + ", ".join(sorted(s)) + "}"
+            return str(s)
+
+        result = []
+        result.append("DeterministicFiniteAutomata:")
+        result.append(f"  States: {[fmt_state(s) for s in self.states]}")
+        result.append(f"  Alphabet: {sorted(self.alphabet)}")
+        result.append("  Transitions:")
+        for (state, symbol), target in self.transitions.items():
+            result.append(f"    δ({fmt_state(state)}, '{symbol}') → {fmt_state(target)}")
+        result.append(f"  Start State: {fmt_state(self.start_state)}")
+        result.append(f"  Accept States: {[fmt_state(s) for s in self.accept_states]}")
+        return "\n".join(result)
 
     def __repr__(self):
         return self.__str__()
