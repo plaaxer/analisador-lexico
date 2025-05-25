@@ -1,4 +1,4 @@
-from automatas.automata import Automata
+from src.framework.automatas.automata import Automata
 
 class NonDeterministicFiniteAutomata(Automata):
     EPSILON = ''  # Convention for representing epsilon transitions

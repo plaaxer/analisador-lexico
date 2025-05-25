@@ -1,4 +1,4 @@
-from lexical_analyzer import LexicalAnalyzer
+from src.application import Application
 
 if __name__ == "__main__":
-    analyzer = LexicalAnalyzer()
+    analyzer = Application()
