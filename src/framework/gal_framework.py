@@ -1,4 +1,4 @@
-
+import os
 from src.framework.regex_processor import RegexProcessor
 from src.framework.automatas.deterministic_automata import DeterministicFiniteAutomata
 from src.framework.automatas.non_deterministic_automata import NonDeterministicFiniteAutomata
@@ -26,6 +26,7 @@ class GalFramework:
                 self.application.error(f"Erro ao processar a expressão regular: {key}")
                 continue
             dfa = self.process_regular_expression(value)
+
             if not dfa:
                 continue
             lexical_analyzer.add_dfa(key, dfa)
@@ -41,15 +42,24 @@ class GalFramework:
         self.loaded_lexical_analyzers.append(lexical_analyzer)
         self.application.log("Analisador léxico gerado com sucesso.")    
 
+    def process_regular_expression(self, regex, name="dfa"):
+            try:
+                dfa = RegexProcessor.regex_to_dfa(regex)
+            except ValueError as e:
+                self.application.error(f"Não foi possível processar a expressão regular: {e}")
+                return
 
+            self.application.log(f"Expressão regular convertida para autômato com sucesso: {dfa}")
 
+            output_dir = "generated_afds"
+            os.makedirs(output_dir, exist_ok=True)
+            file_name = f"{name}.txt"
+            file_path = os.path.join(output_dir, file_name)
+            try:
+                with open(file_path, 'w') as f:
+                    f.write(dfa.to_file_format())
+                self.application.log(f"DFA salvo no arquivo: {file_name}")
+            except Exception as e:
+                self.application.error(f"Erro ao salvar DFA no arquivo: {e}")
 
-    def process_regular_expression(self, regex):
-        try:
-            dfa = RegexProcessor.regex_to_dfa(regex)
-        except ValueError as e:
-            self.application.error(f"Não foi possível processar a expressão regular: {e}")
-            return
-        self.application.log(f"Expressão regular convertida para autômato com sucesso: {dfa}")
-        return dfa
-        
+            return dfa

@@ -1,7 +1,7 @@
 from src.framework.automatas.automata import Automata
 
 class NonDeterministicFiniteAutomata(Automata):
-    EPSILON = ''  # Convention for representing epsilon transitions
+    EPSILON = '&'  # Convention for representing epsilon transitions
 
     def __init__(self, states, alphabet, transitions, start_state, accept_states):
         """
