@@ -15,6 +15,7 @@ class GalFramework:
     def __init__(self, application):
         self.application = application
         self.loaded_lexical_analyzers = []
+        self.current_lexical_analyzer = None
 
     def generate_lexical_analyzer(self, ers_filename="ers.txt"):
         lexical_analyzer = LexicalAnalyzer(config.LEXICAL_ANALYZER_DEFAULT_NAME, self.application)
@@ -24,7 +25,7 @@ class GalFramework:
             if not value:
                 self.application.error(f"Erro ao processar a expressão regular: {key}")
                 continue
-            dfa = self.process_regular_expression(value, key)
+            dfa = self._process_regular_expression(value, key)
 
             if not dfa:
                 continue
@@ -39,9 +40,32 @@ class GalFramework:
             return
 
         self.loaded_lexical_analyzers.append(lexical_analyzer)
+        self.current_lexical_analyzer = lexical_analyzer
         self.application.log("Analisador léxico gerado com sucesso.")
 
-    def process_regular_expression(self, regex, er_name="dfa"):
+    def analyze(self, text, lexical_analyzer_name=None):
+        if lexical_analyzer_name is None:
+            lexical_analyzer = self.current_lexical_analyzer
+
+        else:
+            for la in self.loaded_lexical_analyzers:
+                if la.name == lexical_analyzer_name:
+                    self.application.log(f"Analisador léxico encontrado: {la.name}")
+                    lexical_analyzer = la
+                    break
+        
+        if lexical_analyzer is None:
+            self.application.error("Nenhum analisador léxico carregado.")
+            return
+
+        try:
+            result = lexical_analyzer.process(text)
+            self.application.log(f"Análise realizada com sucesso: {result}")
+            return result
+        except Exception as e:
+            self.application.error(f"Erro ao analisar o texto: {e}")
+
+    def _process_regular_expression(self, regex, er_name="dfa"):
             try:
                 dfa = RegexProcessor.regex_to_dfa(regex)
             except ValueError as e:

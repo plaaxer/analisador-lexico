@@ -6,8 +6,10 @@ class Application:
         self.run()
 
     def run(self):
-        # self.framework.process_regular_expression("+ab?c(a|b)+")
+        # er1: ab?c(a|b)+
+        # er2: ab?(a|b)+
         self.framework.generate_lexical_analyzer("ers.txt")
+        self.framework.analyze("cbabababbaabba")
     
     # eventualmente pode ser um logger mais complexo
     def log(self, message: str):
@@ -15,3 +17,6 @@ class Application:
 
     def error(self, message: str):
         print(f"ERRO: {message}")
+
+    def warning(self, message: str):
+        print(f"AVISO: {message}")
