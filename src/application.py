@@ -6,12 +6,8 @@ class Application:
         self.run()
 
     def run(self):
-        # er1: ab?c(a|b)+
-        # er2: ab?(a|b)+
-        self.framework.generate_lexical_analyzer("ers.txt")
-        self.framework.analyze("cbabababbaabba")
+        pass
     
-    # eventualmente pode ser um logger mais complexo
     def log(self, message: str):
         print(message)
 

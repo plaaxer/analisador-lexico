@@ -257,7 +257,6 @@ class RegexProcessor:
             dfa_transitions: Dict[Tuple[str, str], str] = {}
             dfa_accept_states: Set[str] = set()
             
-            # Map from frozenset of positions to DFA state name (e.g., "D0")
             dfa_state_name_map: Dict[FrozenSet[int], str] = {}
             next_dfa_state_id = 0
 
@@ -269,36 +268,22 @@ class RegexProcessor:
                     next_dfa_state_id += 1
                 return dfa_state_name_map[pos_set]
 
-            # Initial DFA state
             initial_pos_set = frozenset(root.firstpos)
-            if not initial_pos_set: # If firstpos is empty (e.g. regex like "ε*")
-                # This means it might only match empty string or be empty language
-                # If root.nullable is true, then D0 is accepting.
-                # This case needs careful handling for DFA construction.
-                # For now, if firstpos is empty, the language might be just {epsilon} or {}
-                # If regex was "", it's handled. If regex like "()", it's more complex.
-                # If root.firstpos is empty, it means no actual symbols start the match.
-                # If root.nullable is true, the start state should be accepting.
-                # This direct construction might struggle naturally with regexes that solely define empty string vs empty language.
-                # The convention is that an automaton for empty string has a start+accept state.
-                # An automaton for empty language has a start state, non-accepting, no transitions leading to acceptance.
-
-                # If initial_pos_set is empty and root.nullable, it's like the empty string regex
+            if not initial_pos_set:
                 if root.nullable:
-                    d0_name = get_dfa_name(initial_pos_set) # D0 for frozenset()
+                    d0_name = get_dfa_name(initial_pos_set)
                     dfa_states.add(d0_name)
-                    dfa_accept_states.add(d0_name) # Accepts empty string
-                    # No transitions on symbols from this state if it only accepts empty string.
+                    dfa_accept_states.add(d0_name)
                     return DeterministicFiniteAutomata(
                         states=dfa_states, alphabet=alphabet, transitions=dfa_transitions,
                         start_state=d0_name, accept_states=dfa_accept_states
                     )
-                else: # Empty firstpos and not nullable -> empty language
+                else:
                     d0_name = get_dfa_name(initial_pos_set)
                     dfa_states.add(d0_name)
                     return DeterministicFiniteAutomata(
                         states=dfa_states, alphabet=alphabet, transitions=dfa_transitions,
-                        start_state=d0_name, accept_states=set() # Non-accepting
+                        start_state=d0_name, accept_states=set()
                     )
 
 
@@ -317,11 +302,10 @@ class RegexProcessor:
                 
                 current_dfa_name = get_dfa_name(current_pos_frozenset)
 
-                # Check if this DFA state is an accept state
                 if end_marker_pos in current_pos_frozenset:
                     dfa_accept_states.add(current_dfa_name)
 
-                for char_symbol in alphabet: # Iterate over actual symbols
+                for char_symbol in alphabet:
                     next_positions_union: Set[int] = set()
                     for pos in current_pos_frozenset:
                         if symbols_map.get(pos) == char_symbol:
@@ -330,7 +314,7 @@ class RegexProcessor:
                     if next_positions_union:
                         next_dfa_pos_frozenset = frozenset(next_positions_union)
                         next_dfa_name = get_dfa_name(next_dfa_pos_frozenset)
-                        dfa_states.add(next_dfa_name) # Ensure target state is in the set of states
+                        dfa_states.add(next_dfa_name)
                         dfa_transitions[(current_dfa_name, char_symbol)] = next_dfa_name
                         
                         if next_dfa_pos_frozenset not in processed_dfa_sets:

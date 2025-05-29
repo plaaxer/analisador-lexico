@@ -151,7 +151,7 @@ class LexicalAnalyzer():
         dfa_states = {start_closure}
         dfa_transitions = {}
         
-        self.dfa_accept_state_to_token_type_map.clear() # Reset map
+        self.dfa_accept_state_to_token_type_map.clear()
 
         token_type_priority = {key: i for i, key in enumerate(self.dfas.keys())}
         
@@ -309,3 +309,5 @@ class LexicalAnalyzer():
         
         return tokens
 
+    def get_info(self):
+        return f"Analisador Léxico: {self.name}, DFAs Registrados: {len(self.dfas)}"
