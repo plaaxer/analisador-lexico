@@ -16,9 +16,11 @@ class GalFramework:
         self.application = application
         self.loaded_lexical_analyzers = []
         self.current_lexical_analyzer = None
+        self.save_to_file = True
 
-    def generate_lexical_analyzer(self, ers_filename="ers.txt") -> str | None:
-        lexical_analyzer = LexicalAnalyzer(config.LEXICAL_ANALYZER_DEFAULT_NAME, self.application)
+    def generate_lexical_analyzer(self, ers_filename="ers.txt", name=config.LEXICAL_ANALYZER_DEFAULT_NAME) -> str | None:
+
+        lexical_analyzer = LexicalAnalyzer(name, self.application)
         parsed_regexs = utils.parse_entries(ers_filename)
 
         for key, value in parsed_regexs.items():
@@ -77,16 +79,17 @@ class GalFramework:
 
             self.application.log(f"Expressão regular {regex} convertida para autômato com sucesso.")
 
-            output_dir = "generated_afds"
-            os.makedirs(output_dir, exist_ok=True)
-            file_name = f"{er_name}.txt"
-            file_path = os.path.join(output_dir, file_name)
-            try:
-                with open(file_path, 'w') as f:
-                    f.write(dfa.to_file_format())
-                self.application.log(f"DFA para {regex} salvo no arquivo: {file_name}")
-            except Exception as e:
-                self.application.error(f"Erro ao salvar DFA no arquivo: {e}")
+            if self.save_to_file:
+                output_dir = "generated_afds"
+                os.makedirs(output_dir, exist_ok=True)
+                file_name = f"{er_name}.txt"
+                file_path = os.path.join(output_dir, file_name)
+                try:
+                    with open(file_path, 'w') as f:
+                        f.write(dfa.to_file_format())
+                    self.application.log(f"DFA para {regex} salvo no arquivo: {file_name}")
+                except Exception as e:
+                    self.application.error(f"Erro ao salvar DFA no arquivo: {e}")
 
             return dfa
 
@@ -94,7 +97,7 @@ class GalFramework:
         return self.current_lexical_analyzer.name if self.current_lexical_analyzer else None
     
     def get_loaded_lexical_analyzers(self):
-        loaded_str = ", ".join([la.name for la in self.loaded_lexical_analyzers])
+        loaded_str = [la.name for la in self.loaded_lexical_analyzers]
         return loaded_str if loaded_str else None
     
     def set_current_lexical_analyzer(self, analyzer_name: str) -> bool:
@@ -123,3 +126,10 @@ class GalFramework:
                 return la.get_info()
         self.application.error(f"Analisador léxico '{analyzer_name}' não encontrado.")
         return None
+    
+    def set_save_to_file(self, save: bool):
+        self.save_to_file = save
+        if save:
+            self.application.log("Configuração de salvar DFAs em arquivo ativada.")
+        else:
+            self.application.log("Configuração de salvar DFAs em arquivo desativada.")

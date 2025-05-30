@@ -10,10 +10,12 @@ class ApplicationGUI:
         self.root.title("Lexical Analyzer Generator GUI")
         self.root.geometry("800x700")
 
-   
+    
         self.framework = GalFramework(self)
 
         self.er_file_path = tk.StringVar()
+        self.analyzer_name_entry_var = tk.StringVar()
+        self.save_dfa_var = tk.BooleanVar(value=False)
         self.current_analyzer_status = tk.StringVar(value="Current Analyzer: None")
 
         self._setup_styles()
@@ -41,12 +43,20 @@ class ApplicationGUI:
 
         ttk.Label(top_frame, text="ER File:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.file_path_entry = ttk.Entry(top_frame, textvariable=self.er_file_path, width=50, state="readonly")
-        self.file_path_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.file_path_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew", columnspan=2) # Span 2 cols
         self.load_er_button = ttk.Button(top_frame, text="📂 Load ER File", command=self._load_er_file)
-        self.load_er_button.grid(row=0, column=2, padx=5, pady=5)
+        self.load_er_button.grid(row=0, column=3, padx=5, pady=5)
+
+        ttk.Label(top_frame, text="Analyzer Name:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.analyzer_name_entry = ttk.Entry(top_frame, textvariable=self.analyzer_name_entry_var)
+        self.analyzer_name_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        
+        self.save_dfa_checkbutton = ttk.Checkbutton(top_frame, text="Save DFAs to files", variable=self.save_dfa_var)
+        self.save_dfa_checkbutton.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
         self.generate_button = ttk.Button(top_frame, text="⚙️ Generate Analyzer", command=self._generate_analyzer)
-        self.generate_button.grid(row=0, column=3, padx=5, pady=5)
+        self.generate_button.grid(row=1, column=3, padx=5, pady=5)
+        
         top_frame.grid_columnconfigure(1, weight=1)
 
         middle_frame = ttk.Frame(main_frame)
@@ -102,7 +112,7 @@ class ApplicationGUI:
     def _log_message(self, message: str, level: str = "NORMAL"):
         self.log_text.configure(state=tk.NORMAL)
         if self.log_text.index('end-1c') != "1.0":
-             self.log_text.insert(tk.END, "\n")
+                self.log_text.insert(tk.END, "\n")
         self.log_text.insert(tk.END, f"{message}", level.upper())
         self.log_text.configure(state=tk.DISABLED)
         self.log_text.see(tk.END)
@@ -135,7 +145,16 @@ class ApplicationGUI:
             self.error("Please load an ER file first.")
             return
         
-        analyzer_name = self.framework.generate_lexical_analyzer(filepath)
+        analyzer_name_input = self.analyzer_name_entry_var.get().strip()
+        if not analyzer_name_input:
+            self.error("Please enter a name for the analyzer.")
+            return
+        
+        save_dfas_to_file = self.save_dfa_var.get()
+        self.framework.set_save_to_file(save_dfas_to_file)
+        
+        analyzer_name = self.framework.generate_lexical_analyzer(filepath, analyzer_name_input)
+        
         if analyzer_name:
             self._log_message(f"Lexical Analyzer '{analyzer_name}' generated successfully.", "SUCCESS")
             self._update_analyzers_list()
@@ -164,42 +183,47 @@ class ApplicationGUI:
     def _get_selected_analyzer_name(self):
         selected_indices = self.analyzers_listbox.curselection()
         if not selected_indices:
-            self.error("Please select an analyzer from the list.")
             return None
         return self.analyzers_listbox.get(selected_indices[0])
 
     def _set_current_analyzer(self):
         analyzer_name = self._get_selected_analyzer_name()
-        if analyzer_name and analyzer_name != "(No analyzers loaded)":
+        if analyzer_name == "(No analyzers loaded)":
+            self.error("No analyzers available to set as current.")
+            return
+        if analyzer_name:
             if self.framework.set_current_lexical_analyzer(analyzer_name):
-                 self._log_message(f"'{analyzer_name}' is now the current analyzer.", "INFO")
+                self._log_message(f"'{analyzer_name}' is now the current analyzer.", "INFO")
             self._update_current_analyzer_status()
-        elif not analyzer_name:
-             self.error("Please select an analyzer from the list to set as current.")
+        else:
+            self.error("Please select an analyzer from the list to set as current.")
 
 
     def _show_analyzer_info(self):
         analyzer_name = self._get_selected_analyzer_name()
-        if analyzer_name and analyzer_name != "(No analyzers loaded)":
+        if analyzer_name == "(No analyzers loaded)":
+            self.error("No analyzers available to show info for.")
+            return
+        if analyzer_name:
             info = self.framework.get_lexical_analyzer_info(analyzer_name)
             if info:
-                info_str = f"--- Info for '{analyzer_name}' ---\n"
-                for key, value in info.items():
-                    info_str += f"  {key.replace('_', ' ').capitalize()}: {value}\n"
-                self.log(info_str.strip())
+                self.log(info)
             else:
                 self.error(f"Could not retrieve info for '{analyzer_name}'.")
-        elif not analyzer_name:
-             self.error("Please select an analyzer from the list to show its info.")
+        else:
+            self.error("Please select an analyzer from the list to show its info.")
 
     def _delete_analyzer(self):
         analyzer_name = self._get_selected_analyzer_name()
-        if analyzer_name and analyzer_name != "(No analyzers loaded)":
+        if analyzer_name == "(No analyzers loaded)":
+            self.error("No analyzers available to delete.")
+            return
+        if analyzer_name:
             if messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete the lexical analyzer '{analyzer_name}'?"):
                 if self.framework.delete_lexical_analyzer(analyzer_name):
                     self._log_message(f"Analyzer '{analyzer_name}' deleted.", "INFO")
                 self._update_analyzers_list()
-        elif not analyzer_name:
+        else:
              self.error("Please select an analyzer from the list to delete.")
 
 
@@ -209,10 +233,10 @@ class ApplicationGUI:
             self.error("No current lexical analyzer selected. Please generate or set one.")
             return
         if not input_str:
-            self.warning("Input string for analysis is empty.")
-            return
+            pass
 
         tokens = self.framework.analyze(input_str)
+
         self._update_current_analyzer_status()
 
     def _update_current_analyzer_status(self):
