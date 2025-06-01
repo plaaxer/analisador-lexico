@@ -25,6 +25,51 @@ class SyntaxTreeNode:
 class RegexProcessor:
 
     @staticmethod
+    def _expand_char_classes(regex: str) -> str:
+        """
+        Transforma expressões de classe de caracteres como [a-zA-Z0-9] em
+        (a|b|...|z|A|B|...|Z|0|1|...|9). Suporta múltiplos intervalos e caracteres isolados.
+        """
+        i = 0
+        expanded = []
+        n = len(regex)
+
+        while i < n:
+            if regex[i] == '[':
+                j = i + 1
+                while j < n and regex[j] != ']':
+                    j += 1
+                if j >= n:
+                    raise ValueError(f"Char class was not closed in: {regex[i:]}")
+                class_body = regex[i+1:j]
+                chars = []
+                k = 0
+                while k < len(class_body):
+                    if (k + 2 < len(class_body)) and (class_body[k+1] == '-'):
+                        start_char = class_body[k]
+                        end_char = class_body[k+2]
+                        for code in range(ord(start_char), ord(end_char) + 1):
+                            chars.append(chr(code))
+                        k += 3
+                    else:
+                        chars.append(class_body[k])
+                        k += 1
+                seen = set()
+                unique_chars = []
+                for c in chars:
+                    if c not in seen:
+                        seen.add(c)
+                        unique_chars.append(c)
+                union_expr = "(" + "|".join(unique_chars) + ")"
+                expanded.append(union_expr)
+                i = j + 1
+            else:
+                expanded.append(regex[i])
+                i += 1
+
+        return "".join(expanded)
+
+    @staticmethod
     def _preprocess_regex(regex: str) -> str:
         """adiciona '.' entre dois operadores ou entre operador e '(' ou entre ')' e '('."""
         processed_regex = []
@@ -210,8 +255,15 @@ class RegexProcessor:
     def regex_to_dfa(regex: str) -> DeterministicFiniteAutomata:
         """Converte uma expressão regular em um autômato finito determinístico (DFA)."""
 
-        # 1. Preprocessa a expressão regular
+        # 0. Expande classes de caracteres [a-zA-Z0-9] para uniões explícitas
+        if regex:
+            try:
+                regex = RegexProcessor._expand_char_classes(regex)
+            except ValueError as e:
+                raise ValueError(f"Error to expand char classes '{regex}': {e}")
+        print("regex", regex)
 
+        # 1. Preprocessa a expressão regular
         if not regex: # Para o caso de string vazia
             q_empty_accept = "D0"
             return DeterministicFiniteAutomata(
